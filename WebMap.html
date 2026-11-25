@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Geo-História Niterói</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@latest/ol.css">
+  <link href="css/main.css" rel="stylesheet" type="text/css">
+</head>
+
+<body>
+  <script>
+    // Hamburger menu toggle - improved implementation
+    document.addEventListener('DOMContentLoaded', function() {
+      const hamburger = document.querySelector('.hamburger');
+      const navMenu = document.querySelector('header nav ul');
+      
+      if (hamburger && navMenu) {
+        hamburger.addEventListener('click', function() {
+          console.log('Hamburger clicked');
+          this.classList.toggle('open');
+          navMenu.classList.toggle('show');
+        });
+        
+        // Close menu when clicking on a link
+        const navLinks = document.querySelectorAll('nav ul li a');
+        navLinks.forEach(link => {
+          link.addEventListener('click', function() {
+            hamburger.classList.remove('open');
+            navMenu.classList.remove('show');
+          });
+        });
+      } else {
+        console.error('Hamburger menu elements not found');
+      }
+    });
+  </script>
+  <!-- Main Container -->
+<div class="container">
+  <!-- Navigation -->
+  <header>
+    <a href="index.html">
+      <div>
+        <h4 class="logo">
+          Geo-História Niterói
+        </h4>
+      </div>
+    </a>
+    <nav>
+      <div class="hamburger">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <ul>
+        <li><a href="index.html">INICIO</a></li>
+        <li><a href="iconografia.html">ICONOGRAFIA</a></li>
+        <li><a href="referencias.html">REFERÊNCIAS</a></li>
+        <li><a href="sobre.html">SOBRE</a></li>
+        <li><a href="contato.html">CONTATO</a></li>
+      </ul>
+    </nav>
+  </header>
+    <!-- Hero Section -->
+  <div id="map"></div>
+  <div id="timeline-container">
+    <div id="timeline-flex-row">
+      <div id="timeline-slider-col">
+        <input type="range" id="timeline" min="1820" max="2020" step="5" value="2020">
+        <div id="timeline-ticks"></div>
+      </div>
+      <div id="timeline-ano-col">
+        <span id="timeline-label">Ano:</span>
+        <span id="year-value">2020</span>
+      </div>
+    </div>
+    
+    <!-- Botões de controle -->
+    <div id="timeline-controls">
+      <!-- Botão de expansão para fatos históricos -->
+      <div id="timeline-facts-toggle">
+        <button id="facts-button">
+          <span>Fatos Históricos</span>
+          <svg class="facts-icon" viewBox="0 0 24 24"><path d="M7,10L12,15L17,10H7Z"></path></svg>
+        </button>
+      </div>
+      
+      <!-- Botão para alternar camada de satélite -->
+      <div id="satellite-toggle">
+        <button id="satellite-button">
+          <span>Satélite</span>
+          <svg class="satellite-icon" viewBox="0 0 24 24"><path d="M5,18L8.5,13.5L11,16.5L14.5,12L19,18M17,7A3,3 0 0,1 20,10A3,3 0 0,1 17,13A3,3 0 0,1 14,10A3,3 0 0,1 17,7M17,9A1,1 0 0,0 16,10A1,1 0 0,0 17,11A1,1 0 0,0 18,10A1,1 0 0,0 17,9Z"></path></svg>
+        </button>
+      </div>
+    </div>
+    
+    <!-- Painel expansível de fatos históricos -->
+    <div id="timeline-facts-panel">
+      <div id="facts-container">
+        <!-- Os cards de fatos serão inseridos aqui dinamicamente -->
+      </div>
+    </div>
+  </div>
+  <script src="js/canvas-optimization.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ol@latest/dist/ol.js"></script>
+  <!-- Adicionar ol-layerswitcher para gerenciar camadas -->
+  <script src="https://unpkg.com/ol-layerswitcher@4.1.1/dist/ol-layerswitcher.js"></script>
+  <!-- Google Maps API para camada de satélite -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=" async defer></script>
+  <!-- Script de busca -->
+  <script src="js/search.js"></script>
+  <script src="data/Agua_Niteroi_0.js"></script>
+  <script src="data/Terreno_Niteroi_1.js"></script>
+  <script src="data/Lagunas_2.js"></script>
+  <script src="data/Area_Urbana_4.js"></script>
+  <script src="data/Logradouros_6.js"></script>
+  <script src="data/EdifciosHistricos_7.js"></script>
+  <script src="styles/Agua_Niteroi_0_style.js"></script>
+  <script src="styles/Terreno_Niteroi_1_style.js"></script>
+  <script src="styles/Lagunas_2_style.js"></script>
+  <script src="styles/Area_Urbana_4_style.js"></script>
+  <script src="styles/Logradouros_6_style.js"></script>
+  <script src="styles/EdifciosHistricos_7_style.js"></script>
+  <script src="js/popups.js"></script>
+  <script src="js/historical-facts.js"></script>
+  <script>
+    // Função para gerar ticks de anos responsivos
+    function renderTimelineTicks() {
+      const ticksDiv = document.getElementById('timeline-ticks');
+      const slider = document.getElementById('timeline');
+      const min = 1820; // fixo para garantir ticks corretos
+      const max = parseInt(slider.max);
+      const step = parseInt(slider.step);
+      let nTicks = Math.floor(slider.offsetWidth / 60);
+      if (window.innerWidth < 600) nTicks = Math.floor(slider.offsetWidth / 44);
+      nTicks = Math.max(4, Math.min(nTicks, Math.floor((max-min)/step)+1));
+      let ticks = [];
+      let range = max - min;
+      let interval = Math.round(range / (nTicks-1) / step) * step;
+      if (interval < step) interval = step;
+      for (let year = min; year <= max; year += interval) {
+        ticks.push(year);
+      }
+      if (ticks[ticks.length-1] !== max) ticks[ticks.length-1] = max;
+      ticksDiv.innerHTML = '';
+      for (let i=0; i<ticks.length; i++) {
+        const span = document.createElement('span');
+        span.textContent = ticks[i];
+        ticksDiv.appendChild(span);
+      }
+    }
+    window.addEventListener('resize', renderTimelineTicks);
+    setTimeout(renderTimelineTicks, 200);
+    // Atualizar ticks ao carregar e ao mudar tamanho
+    document.addEventListener('DOMContentLoaded', renderTimelineTicks);
+    // --- CACHE DE FILTRAGEM TEMPORAL DOS LOGRADOUROS ---
+    const logradourosCache = {};
+
+    // Função para filtrar ruas pelo ano, com cache
+    function filtrarRuasPorAno(geojson, ano) {
+      if (logradourosCache[ano]) {
+        return logradourosCache[ano];
+      }
+      const resultado = {
+        type: 'FeatureCollection',
+        features: geojson.features.filter(f => {
+          const abertura = f.properties.data_abert ? parseInt(f.properties.data_abert.substring(0,4)) : 0;
+          const fechamento = f.properties.data_fecha ? parseInt(f.properties.data_fecha.substring(0,4)) : null;
+          return abertura <= ano && (!fechamento || fechamento >= ano);
+        })
+      };
+      logradourosCache[ano] = resultado;
+      return resultado;
+    }
+
+    // Inicialização
+    let anoAtual = 2020;
+
+    // --- Função auxiliar para texto (adaptada do qgis2web) ---
+    function createTextStyle(feature, resolution, labelText, labelFont, labelFill, placement, bufferColor, bufferWidth) {
+      return new ol.style.Text({
+        font: labelFont,
+        text: labelText,
+        fill: new ol.style.Fill({color: labelFill}),
+        stroke: bufferColor && bufferWidth > 0 ? new ol.style.Stroke({color: bufferColor, width: bufferWidth}) : undefined,
+        placement: placement,
+        overflow: true
+      });
+    }
+
+    // --- Camadas vetoriais com estilos do QGIS/qgis2web ---
+    // Água
+    const aguaSource = new ol.source.Vector({
+      features: new ol.format.GeoJSON().readFeatures(json_Agua_Niteroi_0, {featureProjection: 'EPSG:3857'})
+    });
+    const aguaLayer = new ol.layer.Vector({
+      source: aguaSource,
+      style: style_Agua_Niteroi_0,
+      title: 'Água',
+      renderMode: 'image', // Otimização: renderizar como imagem para geometrias estáticas
+      updateWhileAnimating: false,
+      updateWhileInteracting: false
+    });
+
+    // Terreno (com timeline)
+    let terrenoSource = new ol.source.Vector({});
+    const terrenoLayer = new ol.layer.Vector({
+      source: terrenoSource,
+      style: style_Terreno_Niteroi_1,
+      title: 'Terreno',
+      renderMode: 'image',
+      updateWhileAnimating: false,
+      updateWhileInteracting: false,
+      // Simplificação baseada no zoom
+      style: function(feature, resolution) {
+        // Simplificar geometria em zoom baixo
+        if (resolution > 10) {
+          const simplified = feature.getGeometry().simplify(resolution * 2);
+          feature.setGeometry(simplified);
+        }
+        return style_Terreno_Niteroi_1(feature, resolution);
+      }
+    });
+
+    // Camada de relevo sombreado (imagem)
+    const relevoLayer = new ol.layer.Image({
+      source: new ol.source.ImageStatic({
+        url: 'data/MDE_Niteroi_3.png',
+        imageExtent: [-4865295.650272, -2641981.864120, -4745410.743154, -2572516.549375],
+        projection: 'EPSG:3857',
+      }),
+      opacity: 1,
+      title: 'Relevo Sombreado'
+    });
+
+    // Lagunas
+    const lagunasSource = new ol.source.Vector({
+      features: new ol.format.GeoJSON().readFeatures(json_Lagunas_2, {featureProjection: 'EPSG:3857'})
+    });
+    const lagunasLayer = new ol.layer.Vector({
+      source: lagunasSource,
+      style: style_Lagunas_2,
+      title: 'Lagunas',
+      renderMode: 'image',
+      updateWhileAnimating: false,
+      updateWhileInteracting: false
+    });
+
+    // Área Urbana (com timeline)
+    let areaUrbanaSource = new ol.source.Vector({});
+    const areaUrbanaLayer = new ol.layer.Vector({
+      source: areaUrbanaSource,
+      style: style_Area_Urbana_4,
+      title: 'Área Urbana',
+      renderMode: 'image',
+      updateWhileAnimating: false,
+      updateWhileInteracting: false
+    });
+    
+    // Edifícios Históricos (com timeline)
+    let edifSource = new ol.source.Vector({});
+    const edifLayer = new ol.layer.Vector({
+      source: edifSource,
+      style: style_EdifciosHistricos_7,
+      title: 'Edifícios Históricos',
+      renderer: 'webgl'
+    });
+
+    // Logradouros (com timeline)
+    let logradourosSource = new ol.source.Vector({});
+    let logradourosLayer = new ol.layer.Vector({
+      source: logradourosSource,
+      style: style_Logradouros_6,
+      title: 'Logradouros (ruas)',
+      renderer: 'webgl'
+    });
+
+    let timelineUpdateTimeout;
+    function atualizarCamadasTemporaisDebounced(ano) {
+      clearTimeout(timelineUpdateTimeout);
+      timelineUpdateTimeout = setTimeout(() => {
+        atualizarCamadasTemporais(ano);
+      }, 30); // 30ms de debounce
+    }
+
+    // Função para filtrar qualquer camada GeoJSON pelo ano
+    function filtrarFeaturesPorAno(geojson, ano) {
+      return geojson.features.filter(f => {
+        const abertura = f.properties.data_abert ? parseInt(f.properties.data_abert.substring(0,4)) : 0;
+        const fechamento = f.properties.data_fecha ? parseInt(f.properties.data_fecha.substring(0,4)) : null;
+        return abertura <= ano && (!fechamento || fechamento >= ano);
+      });
+    }
+
+    // Camada do Google Maps Satellite
+    const googleSatellite = new ol.layer.Tile({
+      source: new ol.source.XYZ({
+        url: 'https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+        maxZoom: 20,
+        attributions: '© Google'
+      }),
+      visible: false,  // Inicialmente invisível
+      zIndex: 100,    // Acima das outras camadas
+      // Otimizações de renderização
+      updateWhileAnimating: false,
+      updateWhileInteracting: false,
+      preload: 1
+    });
+    
+    // Mapa
+    const map = new ol.Map({
+      target: 'map',
+      layers: [
+        aguaLayer,
+        terrenoLayer,
+        relevoLayer,
+        lagunasLayer,
+        areaUrbanaLayer,
+        logradourosLayer,
+        edifLayer,
+        googleSatellite  // Adicionando a camada do Google Maps
+      ],
+      view: new ol.View({
+        center: ol.proj.fromLonLat([-43.103, -22.903]),
+        zoom: 13,
+        minZoom: 11,
+        maxZoom: 18,
+        // Restrição de área para Niterói e arredores
+        // Coordenadas em EPSG:3857: SW(-4834603,-2648452) NE(-4756783,-2582192)
+        extent: [-4834603, -2648452, -4756783, -2582192],
+        constrainOnlyCenter: false
+      })
+    });
+
+    // Atualiza todas as camadas temporais conforme o ano
+    function atualizarCamadasTemporais(ano) {
+      const format = new ol.format.GeoJSON();
+      // Logradouros
+      const filtradoLogradouros = filtrarRuasPorAno(json_Logradouros_6, ano);
+      const featsLogradouros = format.readFeatures(filtradoLogradouros, { featureProjection: 'EPSG:3857' });
+      logradourosSource.clear();
+      logradourosSource.addFeatures(featsLogradouros);
+      // Terreno
+      const filtradoTerreno = filtrarFeaturesPorAno(json_Terreno_Niteroi_1, ano);
+      const featsTerreno = format.readFeatures({type:'FeatureCollection',features:filtradoTerreno}, { featureProjection: 'EPSG:3857' });
+      terrenoSource.clear();
+      terrenoSource.addFeatures(featsTerreno);
+      // Edifícios Históricos
+      const filtradoEdif = filtrarFeaturesPorAno(json_EdifciosHistricos_7, ano);
+      const featsEdif = format.readFeatures({type:'FeatureCollection',features:filtradoEdif}, { featureProjection: 'EPSG:3857' });
+      edifSource.clear();
+      edifSource.addFeatures(featsEdif);
+      // Área Urbana
+      const filtradoArea = filtrarFeaturesPorAno(json_Area_Urbana_4, ano);
+      const featsArea = format.readFeatures({type:'FeatureCollection',features:filtradoArea}, { featureProjection: 'EPSG:3857' });
+      areaUrbanaSource.clear();
+      areaUrbanaSource.addFeatures(featsArea);
+    }
+    atualizarCamadasTemporais(anoAtual);
+
+    // Controle timeline
+    const timeline = document.getElementById('timeline');
+    const yearValue = document.getElementById('year-value');
+    timeline.addEventListener('input', function() {
+      anoAtual = parseInt(this.value);
+      yearValue.textContent = anoAtual;
+      atualizarCamadasTemporaisDebounced(anoAtual); // Usar versão com debounce
+      renderTimelineTicks();
+    });
+
+    // Inicializa o sistema de popups (apenas para Logradouros e Edifícios Históricos)
+    const popupManager = new PopupManager(map, logradourosLayer, edifLayer);
+    
+    // Carrega o sistema de fatos históricos com referência ao mapa
+    const factsManager = new HistoricalFactsManager(timeline, map);
+    
+    // Inicializa o sistema de busca
+    const searchManager = new SearchManager(map, logradourosLayer, edifLayer);
+    
+    // Controle de camada de satélite
+    const satelliteButton = document.getElementById('satellite-button');
+    satelliteButton.addEventListener('click', function() {
+      // Alterna a visibilidade da camada de satélite
+      const isVisible = googleSatellite.getVisible();
+      googleSatellite.setVisible(!isVisible);
+      
+      // Atualiza a aparência do botão
+      this.classList.toggle('active');
+      
+      // Ajusta a opacidade das camadas base quando o satélite está ativo
+      if (!isVisible) {
+        // Satélite ativado: reduz a opacidade das camadas base
+        aguaLayer.setOpacity(0.6);
+        terrenoLayer.setOpacity(0.6);
+        lagunasLayer.setOpacity(0.6);
+        areaUrbanaLayer.setOpacity(0.8);
+        // Mantém as camadas temporais visíveis por cima do satélite
+        logradourosLayer.setOpacity(1);
+        edifLayer.setOpacity(1);
+      } else {
+        // Satélite desativado: restaura a opacidade das camadas base
+        aguaLayer.setOpacity(1);
+        terrenoLayer.setOpacity(1);
+        lagunasLayer.setOpacity(1);
+        areaUrbanaLayer.setOpacity(1);
+      }
+      
+      // Força uma atualização das camadas temporais para garantir boa visualização
+      atualizarCamadasTemporais(anoAtual);
+    });
+  </script>
+</body>
+</html>

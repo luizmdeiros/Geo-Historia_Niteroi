@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Iconografia - Geo-História Niterói</title>
+    <link href="css/main.css" rel="stylesheet" type="text/css">
+    <link href="css/pages/iconografia.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+<!-- Main Container -->
+<div class="container"> 
+  <!-- Navigation -->
+  <header> <a href="index.html">
+    <div>
+      <h4 class="logo">
+        Geo-História Niterói
+      </h4>
+    </div>
+    
+    </a>
+    <nav>
+      <div class="hamburger">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+      <ul>
+        <li><a href="WebMap.html">WEBMAP</a></li>
+        <li><a href="iconografia.html">ICONOGRAFIA</a></li>
+        <li><a href="referencias.html">REFERÊNCIAS</a></li>
+        <li><a href="sobre.html">SOBRE</a></li>
+        <li><a href="contato.html">CONTATO</a></li>
+      </ul>
+    </nav>
+  </header>
+  
+  <!-- Apresentação da Iconografia -->
+  <section class="apresentacao" id="apresentacao">
+    <h2>Iconografia Histórica de Niterói</h2>
+    <p>
+      A seção de Iconografia do <strong>Geo-História Niterói</strong> apresenta um acervo de imagens históricas que documentam a evolução urbana e paisagística da cidade ao longo dos séculos. Estas representações visuais complementam o mapa interativo, oferecendo uma perspectiva única sobre as transformações do espaço urbano niteroiense.
+    </p>
+    <blockquote>
+      "As imagens são testemunhas silenciosas da história, revelando aspectos da vida urbana que os documentos escritos nem sempre capturam."
+      <span>— Ulpiano Bezerra de Meneses</span>
+    </blockquote>
+  </section>
+
+  <!-- Galeria de Imagens -->
+  <section class="galeria-section">
+    <div class="filtros-container">
+      <button class="filtro-btn ativo" data-filtro="todos">Todos os Períodos</button>
+      <button class="filtro-btn" data-filtro="seculo-xix">Século XIX</button>
+      <button class="filtro-btn" data-filtro="1900-1950">1900-1950</button>
+      <button class="filtro-btn" data-filtro="1951-2000">1951-2000</button>
+      <button class="filtro-btn" data-filtro="2001-atual">2001-atual</button>
+    </div>
+    
+    <div class="galeria-container">
+      <!-- Os itens da galeria serão carregados dinamicamente via JavaScript -->
+      <div class="carregando">
+        <p>Carregando imagens...</p>
+      </div>
+    </div>
+  </section>
+  
+  <!-- Modal para visualização ampliada -->
+  <div id="imagem-modal" class="modal-iconografia">
+    <span class="fechar-modal">&times;</span>
+    <img id="modal-img" src="" alt="Imagem Ampliada">
+    <h3 id="modal-titulo"></h3>
+    <div id="modal-legenda" class="modal-legenda"></div>
+  </div>
+
+  <!-- Footer Section -->
+  <section class="footer_banner" id="contact">
+    <h2 class="hidden">Footer Banner Section </h2>
+    <p class="hero_header">APOIO</p>
+
+    <div style="text-align: center;">
+    <a href="https://www.niteroi.rj.gov.br/"><img src="images/Niteroi.png" hspace="15" vspace="25"></a>
+    <a href="https://www.pdpa.niteroi.rj.gov.br/"><img src="images/logo-PDPA.png" hspace="15" vspace="25"></a>
+    <a href="https://www.somosfec.org.br/"><img src="images/logo-fec.png" hspace="15" vspace="25"></a>
+    <a href="https://www.uff.br/"><img src="images/logo-uff.png" hspace="15" vspace="25"></a>
+    <a href="https://www.geociencias.uff.br/"><img src="images/logo_geociencias.png" hspace="15" vspace="25"></a>
+    <a href="https://www.next.uff.br/"><img src="images/logo_next.png" hspace="15" vspace="25"></a>
+    </div>
+
+  </section>
+  <!-- Copyrights Section -->
+  <div class="copyright">&copy; Copyright 2025. UFF - Todos os direitos reservados.<br>
+  </div>
+</div>
+<!-- Main Container Ends -->
+<script src="js/iconografia.js"></script>
+<script>
+  // Hamburger menu toggle - improved implementation
+  document.addEventListener('DOMContentLoaded', function() {
+    const hamburger = document.querySelector('.hamburger');
+    const navMenu = document.querySelector('header nav ul');
+    
+    if (hamburger && navMenu) {
+      hamburger.addEventListener('click', function() {
+        console.log('Hamburger clicked');
+        this.classList.toggle('open');
+        navMenu.classList.toggle('show');
+      });
+      
+      // Close menu when clicking on a link
+      const navLinks = document.querySelectorAll('nav ul li a');
+      navLinks.forEach(link => {
+        link.addEventListener('click', function() {
+          hamburger.classList.remove('open');
+          navMenu.classList.remove('show');
+        });
+      });
+    } else {
+      console.error('Hamburger menu elements not found');
+    }
+  });
+</script>
+</body>
+</html>
